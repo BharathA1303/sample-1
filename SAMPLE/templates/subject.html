@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Download free student notes for Tamil, English, Statistics, Java, HTML and more.">
+    <meta name="theme-color" content="#4f46e5">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{{ department.title() }} - Year {{ year }} - {{ semester.title() }} Semester | Notes Dock</title>
+    <link rel="icon" href="{{ url_for('static', filename='assets/logo.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/subject.css') }}">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-brand">
+            <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Notes Dock Logo" class="header-logo">
+            <div>
+                <h1 class="site-title">Notes Dock</h1>
+                <h4 class="site-slogan">Built by students, for students</h4>
+            </div>
+        </div>
+
+        <button class="hamburger" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <nav class="header-nav" id="header-nav" aria-label="Main navigation">
+            <a href="{{ url_for('about') }}"><b>About</b></a>
+            <a href="{{ url_for('contact') }}"><b>Contact Us</b></a>
+            <a href="#" onclick="openAdminModal(); return false;">
+                <i class="fas fa-user-shield admin-icon"></i>
+                <b>Admin</b>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout();">
+                <i class="fas fa-sign-out-alt"></i>
+                <b>Logout</b>
+            </a>
+        </nav>
+    </header>
+
+    <!-- Admin Modal -->
+    <div class="admin-modal-overlay" id="admin-modal-overlay" aria-hidden="true" role="presentation">
+        <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+            <div class="admin-modal-header">
+                <button class="admin-close-btn" onclick="closeAdminModal()" aria-label="Close admin panel">
+                    ×
+                </button>
+                <h2 class="admin-modal-title" id="admin-modal-title">Admin Panel</h2>
+                <p class="admin-modal-subtitle">Year {{ year }} - {{ semester.title() }} Semester</p>
+            </div>
+            <div class="admin-modal-body">
+                <div class="admin-error" id="admin-error" role="alert" aria-live="assertive" style="display: none;">
+                    Invalid username or password. Please try again.
+                </div>
+                <form id="admin-form" onsubmit="handleAdminLogin(event)">
+                    <div class="admin-form-group">
+                        <label for="admin-username" class="admin-label">Admin ID</label>
+                        <input type="text" id="admin-username" name="username" class="admin-input"
+                            placeholder="Enter your username" required>
+                    </div>
+                    <div class="admin-form-group">
+                        <label for="admin-password" class="admin-label">Password</label>
+                        <input type="password" id="admin-password" name="password" class="admin-input"
+                            placeholder="Enter your password" required>
+                    </div>
+                    <div class="admin-buttons">
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="closeAdminModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="admin-btn admin-btn-primary">
+                            Login
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <!-- Subject Header -->
+        <div class="subject-header">
+            <p class="user-namedisplay">
+                <span id="greeting"></span>, {{ name }}
+            </p>
+            <h1 class="subject-title">{{ department.title() }} Year {{ year }}</h1>
+            <p class="subject-subtitle">{{ semester.title() }} Semester Study Materials</p>
+        </div>
+
+        <!-- Subject Selection -->
+        <div class="subject-selector">
+            <div class="subject-tabs" role="tablist">
+                {% for subject in subjects %}
+                <button class="subject-tab {% if loop.first %}active{% endif %}"
+                    data-subject="{{ subject.name.lower().replace(' ', '-') }}"
+                    onclick="showSubject('{{ subject.name.lower().replace(' ','-') }}')"
+                    role="tab"
+                    aria-selected="{% if loop.first %}true{% else %}false{% endif %}"
+                    aria-controls="{{ subject.name.lower().replace(' ', '-') }}-section">
+                    <i class="{{ subject.icon }}"></i>
+                    <span>{{ subject.name }}</span>
+                </button>
+                {% endfor %}
+
+                {% if not subjects %}
+                <div style="padding: 1.5rem; font-size: clamp(0.9rem, 2.5vw, 1rem);">
+                    <i class="fas fa-folder-open" style="font-size: clamp(2rem, 8vw, 3rem); color:#9ca3af; margin-bottom: 1rem; display: block;"></i>
+                    <p>Subjects haven't been uploaded yet.</p>
+                    <p>Check back later!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Dynamic Subject Sections -->
+        {% for subject in subjects %}
+        <div id="{{ subject.name.lower().replace(' ', '-') }}-section"
+            class="subject-section {% if loop.first %}active{% endif %}"
+            role="tabpanel"
+            aria-labelledby="{{ subject.name.lower().replace(' ', '-') }}-tab">
+            <div class="units-grid">
+                {% if subject.units %}
+                {% for unit in subject.units|sort(attribute='number') %}
+                <div class="unit-card" data-unit-id="{{ unit.id }}">
+                    <div class="unit-header">
+                        <div class="unit-icon {{ subject.name.lower() }}">
+                            <i class="fas fa-file-alt" aria-hidden="true"></i>
+                        </div>
+                        <div class="unit-number">{{ "%02d"|format(unit.number) }}</div>
+                    </div>
+                    <h3 class="unit-title">{{ unit.title }}</h3>
+                    <p class="unit-description">{{ unit.description }}</p>
+                    <div class="unit-stats">
+                        <span><i class="fas fa-list-ul" aria-hidden="true"></i> {{ unit.topics.split('-') | length if unit.topics else 0 }} topics</span>
+                        <span><i class="fas fa-file-pdf" aria-hidden="true"></i> {{ unit.pages_count }} pages</span>
+                    </div>
+                    <div class="unit-topics">Topics: {{ unit.topics or 'Not specified' }}</div>
+                    {% if unit.filename %}
+                    <button class="download-btn" onclick="downloadUnit('{{ unit.filename }}', '{{ unit.title }}')" aria-label="Download Unit {{ unit.number }}: {{ unit.title }}">
+                        <i class="fas fa-download" aria-hidden="true"></i>
+                        <span>Download Unit {{ unit.number }}</span>
+                    </button>
+                    {% else %}
+                    <button class="download-btn" disabled aria-label="File not available for Unit {{ unit.number }}">
+                        <i class="fas fa-download" aria-hidden="true"></i>
+                        <span>File Not Available</span>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="no-units-message">
+                    <div class="no-units-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3 class="no-units-title">No units available yet</h3>
+                    <p class="no-units-description">Units for {{ subject.name }} haven't been added yet. Check back later!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </main>
+
+    <!-- Site Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-bottom">
+                <p>🔔 24/7 Support Available</p>
+                <p>&copy; 2025 Notes Dock. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Admin Functions
+        function openAdminModal() {
+            const modal = document.getElementById('admin-modal-overlay');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.getElementById('admin-username').focus();
+        }
+
+        function closeAdminModal() {
+            const modal = document.getElementById('admin-modal-overlay');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.getElementById('admin-form').reset();
+            document.getElementById('admin-error').style.display = 'none';
+        }
+
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('admin-username').value;
+            const password = document.getElementById('admin-password').value;
+            const errorDiv = document.getElementById('admin-error');
+
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    window.location.replace('/admin');
+                } else {
+                    errorDiv.textContent = result.message;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Login failed. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Logout confirmation
+        // function confirmLogout() {
+        //     return confirm('Are you sure you want to logout? Your session data will be cleared.');
+        // }
+
+        // Logout confirmation - now clears localStorage before redirecting
+        function confirmLogout() {
+            const confirmed = confirm('Are you sure you want to logout? Your session data will be cleared.');
+            if (confirmed) {
+                // Clear localStorage before logout
+                localStorage.removeItem('courseFormData');
+                return true;
+            }
+            return false;
+        }
+
+        // Hamburger menu toggle
+        document.getElementById('nav-toggle').addEventListener('click', function () {
+            const nav = document.getElementById('header-nav');
+            const isOpen = nav.classList.toggle('open');
+            this.classList.toggle('open');
+            this.setAttribute('aria-expanded', isOpen);
+        });
+
+        // Close mobile menu when clicking a link
+        document.querySelectorAll('.header-nav a').forEach(link => {
+            link.addEventListener('click', function() {
+                document.getElementById('header-nav').classList.remove('open');
+                document.getElementById('nav-toggle').classList.remove('open');
+                document.getElementById('nav-toggle').setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        // Subject switching functionality
+        function showSubject(subjectName) {
+            document.querySelectorAll('.subject-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            document.querySelectorAll('.subject-tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.setAttribute('aria-selected', 'false');
+            });
+
+            const section = document.getElementById(`${subjectName}-section`);
+            if (section) {
+                section.classList.add('active');
+            }
+
+            const activeTab = document.querySelector(`[data-subject="${subjectName}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+                activeTab.setAttribute('aria-selected', 'true');
+            }
+
+            setTimeout(() => {
+                const cards = section?.querySelectorAll('.unit-card');
+                if (cards) {
+                    cards.forEach((card, index) => {
+                        card.style.animationDelay = `${index * 0.1}s`;
+                        card.style.animation = 'none';
+                        card.offsetHeight;
+                        card.style.animation = 'fadeInUp 0.6s ease forwards';
+                    });
+                }
+            }, 100);
+
+            // Close mobile menu after selecting
+            if (window.innerWidth < 640) {
+                document.getElementById('header-nav').classList.remove('open');
+                document.getElementById('nav-toggle').classList.remove('open');
+                document.getElementById('nav-toggle').setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        // Download functionality with responsive toast positioning
+        async function downloadUnit(filename, unitTitle) {
+            const button = event.target.closest('.download-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<div class="loading"></div> <span>Downloading...</span>';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`/download/${filename}`);
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showToast(`Downloaded ${unitTitle} successfully!`, 'success');
+                } else {
+                    showToast('Download failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                showToast('Download failed. Please try again.', 'error');
+            }
+
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+
+        // Responsive toast notification system
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            toast.textContent = message;
+            
+            const isMobile = window.innerWidth < 640;
+            const top = isMobile ? '10px' : '20px';
+            const right = isMobile ? '10px' : '20px';
+            const maxWidth = isMobile ? 'calc(100vw - 20px)' : '300px';
+            
+            toast.style.cssText = `
+                position: fixed;
+                top: ${top};
+                right: ${right};
+                background: ${type === 'success' ? '#10b981' : '#ef4444'};
+                color: white;
+                padding: clamp(0.75rem, 2vw, 1rem) clamp(1rem, 3vw, 1.5rem);
+                border-radius: 0.5rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 5000;
+                opacity: 0;
+                transform: translateY(-20px);
+                transition: all 0.3s ease;
+                font-family: inherit;
+                font-size: clamp(0.8rem, 2vw, 0.9rem);
+                font-weight: 500;
+                max-width: ${maxWidth};
+                word-wrap: break-word;
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 100);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function () {
+            const firstTab = document.querySelector('.subject-tab');
+            if (firstTab) {
+                const firstSubject = firstTab.dataset.subject;
+                showSubject(firstSubject);
+            }
+        });
+
+        const greetings = [
+            "Hello",
+            "Hi",
+            "Greetings",
+            "Hey there",
+            "Welcome back",
+            "Good to see you",
+            "Long time no see",
+            "Vanakkam da!",
+            "Hello, friend!",
+            "Good day!",
+            "Yo!",
+            "எப்போடி இருக்கீங்க",
+            "வணக்கம் நண்பரே",
+            "எப்போடி இருக்கே?"
+        ];
+
+        const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+        const greetingSpan = document.getElementById("greeting");
+        if (greetingSpan) {
+            greetingSpan.textContent = randomGreeting;
+        }
+
+        // NUCLEAR OPTION: Complete History Wipe + Maximum Back Prevention
+        (function () {
+            console.log('🔒 NUCLEAR: Subject page back prevention activated');
+
+            if (window.history) {
+                window.history.replaceState(null, null, window.location.href);
+                for (let i = 0; i < 50; i++) {
+                    window.history.pushState(null, null, window.location.href);
+                }
+            }
+
+            const blockNavigation = function (e) {
+                console.log('🚫 SUBJECT: Back blocked - restoring position');
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+
+                for (let i = 0; i < 10; i++) {
+                    window.history.pushState(null, null, window.location.href);
+                }
+
+                showToast('Please use the Logout button to exit', 'info');
+                return false;
+            };
+
+            window.addEventListener('popstate', blockNavigation, true);
+            window.addEventListener('popstate', blockNavigation, false);
+
+            if (window.history) {
+                const originalBack = window.history.back;
+                window.history.back = function () {
+                    console.log('🚫 history.back() BLOCKED');
+                    for (let i = 0; i < 10; i++) {
+                        window.history.pushState(null, null, window.location.href);
+                    }
+                    return false;
+                };
+
+                const originalGo = window.history.go;
+                window.history.go = function (n) {
+                    if (n && n < 0) {
+                        console.log('🚫 history.go(' + n + ') BLOCKED');
+                        for (let i = 0; i < 10; i++) {
+                            window.history.pushState(null, null, window.location.href);
+                        }
+                        return false;
+                    }
+                    return originalGo.apply(this, arguments);
+                };
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.altKey && e.keyCode === 37) {
+                    console.log('🚫 Alt+Left (back) BLOCKED');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (e.keyCode === 8 &&
+                    !['INPUT', 'TEXTAREA'].includes(e.target.tagName) &&
+                    e.target.type !== 'text' &&
+                    e.target.type !== 'password') {
+                    console.log('🚫 Backspace navigation BLOCKED');
+                    e.preventDefault();
+                    return false;
+                }
+            }, true);
+
+            document.addEventListener('mouseup', function (e) {
+                if (e.button === 3 || e.button === 8) {
+                    console.log('🚫 Mouse back button BLOCKED');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+
+            window.addEventListener('hashchange', function (e) {
+                console.log('🚫 Hash change BLOCKED');
+                e.preventDefault();
+                window.location.hash = '';
+                return false;
+            }, true);
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    for (let i = 0; i < 10; i++) {
+                        window.history.pushState(null, null, window.location.href);
+                    }
+                }
+            });
+
+            console.log('✅ NUCLEAR protection active - 50 state buffer created');
+        })();
+    </script>
+</body>
+
+</html>

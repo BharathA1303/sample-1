@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Access study materials for your department, year, and semester">
+    <meta name="theme-color" content="#4f46e5">
+    <title>Notes Dock - Select Your Course</title>
+    <link rel="icon" href="{{ url_for('static', filename='assets/logo.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-brand">
+            <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Notes Dock Logo" class="header-logo">
+            <h1 class="site-title">Notes Dock</h1>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="selection-container">
+            <form class="selection-form" id="courseForm">
+                <div class="hero-section">
+                    <h1 class="hero-title">Welcome to Notes Dock</h1>
+                    <h2 class="site-slogan">Built by students, for students</h2>
+                </div>
+
+                <!-- Name -->
+                <div class="form-group">
+                    <label for="name" class="form-label">
+                        <i class="fas fa-user"></i>
+                        <span>Name</span>
+                    </label>
+                    <input type="text" id="name" name="name" class="form-input" placeholder="Enter your full name"
+                        required>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope"></i>
+                        <span>Email</span>
+                    </label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email"
+                        required>
+                </div>
+
+                <!-- Department -->
+                <div class="form-group">
+                    <label for="department" class="form-label">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Department</span>
+                    </label>
+                    <select id="department" name="department" class="form-select" required>
+                        <option value="computer science">Bsc Computer Science</option>
+                    </select>
+                </div>
+
+                <!-- Year -->
+                <div class="form-group">
+                    <label for="year" class="form-label">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Academic Year [2025-26]</span>
+                    </label>
+                    <select id="year" name="year" class="form-select" required>
+                        <option value="">Select Year</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                    </select>
+                </div>
+
+                <!-- Section -->
+                <div class="form-group">
+                    <label for="section" class="form-label">
+                        <i class="fas fa-users"></i>
+                        <span>Section</span>
+                    </label>
+                    <select id="section" name="section" class="form-select" required>
+                        <option value="">Select Section</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                    </select>
+                </div>
+
+                <!-- Semester -->
+                <div class="form-group">
+                    <label for="semester" class="form-label">
+                        <i class="fas fa-book"></i>
+                        <span>Semester</span>
+                    </label>
+                    <select id="semester" name="semester" class="form-select" required>
+                        <option value="">Select Semester</option>
+                        <option value="odd">Odd Semester</option>
+                        <option value="even">Even Semester</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>Access Study Materials</span>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-bottom">
+                <p>📞 24/7 Support Available</p>
+                <p>&copy; 2025 Notes Dock. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Check if we came from logout and clear storage
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('clear') === 'true') {
+            localStorage.removeItem('courseFormData');
+            // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // Load saved form data from browser storage
+        function loadFormData() {
+            const savedData = localStorage.getItem('courseFormData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                document.getElementById('department').value = data.department || '';
+                document.getElementById('year').value = data.year || '';
+                document.getElementById('semester').value = data.semester || '';
+                document.getElementById('section').value = data.section || '';
+                document.getElementById('name').value = data.name || '';
+                document.getElementById('email').value = data.email || '';
+            }
+        }
+
+        // Save form data to browser storage
+        function saveFormData() {
+            const formData = {
+                department: document.getElementById('department').value,
+                year: document.getElementById('year').value,
+                semester: document.getElementById('semester').value,
+                section: document.getElementById('section').value,
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value
+            };
+            localStorage.setItem('courseFormData', JSON.stringify(formData));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('courseForm');
+            const savedData = localStorage.getItem('courseFormData');
+            let shouldAutoSubmit = false;
+
+            // Check if we should clear data (coming from logout)
+            const urlParams = new URLSearchParams(window.location.search);
+            const shouldClear = urlParams.get('clear') === 'true';
+
+            // Only load and auto-submit if NOT coming from logout
+            if (savedData && !shouldClear) {
+                loadFormData();
+                shouldAutoSubmit = true;
+            }
+
+            const selects = form.querySelectorAll('select, input');
+
+            // Add animation when selections are made
+            selects.forEach(element => {
+                element.addEventListener('change', function () {
+                    this.classList.add('selected');
+                });
+                element.addEventListener('input', function () {
+                    this.classList.add('selected');
+                });
+            });
+
+            // Auto-submit form if data was loaded from storage
+            if (shouldAutoSubmit) {
+                setTimeout(() => {
+                    form.dispatchEvent(new Event('submit'));
+                }, 500);
+            }
+
+            // Form submission
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const department = document.getElementById('department').value;
+                const year = document.getElementById('year').value;
+                const semester = document.getElementById('semester').value;
+                const section = document.getElementById('section').value;
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+
+                if (!department || !year || !semester || !section || !name || !email) {
+                    showToast('Please fill in all fields', 'error');
+                    return false;
+                }
+
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showToast('Please enter a valid email address', 'error');
+                    return false;
+                }
+
+                // Save form data
+                saveFormData();
+
+                // Show loading state
+                const submitBtn = form.querySelector('.submit-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Loading...</span>';
+                submitBtn.disabled = true;
+
+                // Register user in database
+                registerUser(department, year, semester, section, name, email, submitBtn, originalText);
+            });
+        });
+
+        // Register user and redirect
+        async function registerUser(department, year, semester, section, name, email, submitBtn, originalText) {
+            try {
+                const response = await fetch('/api/register-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        department,
+                        year,
+                        section,
+                        name,
+                        email
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Redirect to subjects page with all parameters
+                    const params = new URLSearchParams({
+                        department,
+                        year,
+                        semester,
+                        section,
+                        name,
+                        email
+                    });
+
+                    // Use replace() instead of href to prevent adding to history
+                    // This ensures back button cannot return to index page
+                    window.location.replace(`/subjects?${params.toString()}`);
+                } else {
+                    showToast(result.message || 'Registration failed', 'error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Toast notification system with responsive positioning
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            
+            const isMobile = window.innerWidth < 640;
+            const top = isMobile ? '10px' : '20px';
+            const right = isMobile ? '10px' : '20px';
+            const maxWidth = isMobile ? 'calc(100vw - 20px)' : '300px';
+            
+            toast.style.cssText = `
+                position: fixed;
+                top: ${top};
+                right: ${right};
+                background: ${type === 'success' ? '#10b981' : '#ef4444'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+                z-index: 5000;
+                opacity: 0;
+                transform: translateY(-20px);
+                transition: all 0.3s ease;
+                font-family: inherit;
+                font-size: clamp(0.85rem, 2vw, 0.9rem);
+                font-weight: 500;
+                max-width: ${maxWidth};
+                word-wrap: break-word;
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 100);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        window.addEventListener("pageshow", function (event) {
+            const form = document.getElementById('courseForm');
+            const submitBtn = form.querySelector('.submit-btn');
+            submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i> <span>Access Study Materials</span>';
+            submitBtn.disabled = false;
+        });
+
+        // Allow back button on index page, but clear forward history
+        (function () {
+            console.log('📄 Index page loaded');
+
+            // Clear forward history when page loads
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                    console.log('Index page: Loaded from cache, reloading...');
+                    window.location.reload();
+                }
+            });
+
+            // Replace current history state to prevent back navigation to subject page
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, null, window.location.href);
+            }
+        })();
+
+        // Prevent navigation back to subject page
+        window.addEventListener('popstate', function (e) {
+            console.log('🚫 Back button pressed on index page');
+            // Stay on current page
+            window.history.pushState(null, null, window.location.href);
+        });
+    </script>
+</body>
+
+</html

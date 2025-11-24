@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Admin panel for managing study materials">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Admin Panel - Year {{ year }} {{ semester.title() }} Semester | Notes Dock</title>
+    <link rel="icon" href="{{ url_for('static', filename='assets/logo.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-brand">
+            <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Notes Dock Logo" class="header-logo">
+            <!-- <h1 class="site-title">Notes Dock</h1> -->
+             <div style="display: flex; flex-direction: column;">
+            <h1 class="site-title">Notes Dock</h1>
+            <h4 class="site-slogan">Built by students, for students</h4>
+            </div>
+        </div>
+        <a href="/admin/logout" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </header>
+
+    <main class="main-content">
+        <!-- Admin Header -->
+        <div class="admin-header">
+            <h1 class="admin-title">Admin Dashboard</h1>
+            <p class="admin-subtitle">Create, Manage and monitor platform statistics</p>
+        </div>
+
+        <div class="admin-container-nav">
+            <!-- Navigation Tabs -->
+            <div class="admin-nav">
+                <button class="nav-tab active" data-section="add" onclick="showSection('add')">
+                    <i class="fas fa-plus"></i> Create
+                </button>
+                <button class="nav-tab" data-section="subjects" onclick="showSection('subjects')">
+                    <i class="fas fa-book"></i> Manage
+                </button>
+                <button class="nav-tab" data-section="overview" onclick="showSection('overview')">
+                    <i class="fas fa-chart-bar"></i> Overview
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-container">
+
+            <!-- Add Content Section -->
+            <div id="add-section" class="admin-section active">
+                <h2 class="section-title">Add Subjects and Units</h2>
+
+                <div class="add-content-tabs">
+                    <button class="content-tab active" data-type="subject" onclick="showContentType('subject')">
+                        Add Subject
+                    </button>
+                    <button class="content-tab" data-type="unit" onclick="showContentType('unit')">
+                        Add Unit
+                    </button>
+                </div>
+
+                <!-- Add Subject Form -->
+                <div id="add-subject-form" class="content-form active">
+                    <form id="subjectForm" onsubmit="addSubject(event)">
+                        <div class="form-group">
+                            <label for="subject-name" class="form-label">Subject Name</label>
+                            <input type="text" id="subject-name" name="subject_name" class="form-input"
+                                placeholder="e.g., Computer Networks" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject-icon" class="form-label">Icon Class</label>
+                            <select id="subject-icon" name="subject_icon" class="form-select">
+                                <option value="fas fa-book">General</option>
+                                <option value="fas fa-code">Programming</option>
+                                <option value="fas fa-database">Database</option>
+                                <option value="fas fa-chart-line">Mathematics</option>
+                                <option value="fas fa-network-wired">Networks</option>
+                                <option value="fas fa-brain">AI/ML</option>
+                                <option value="fas fa-mobile-alt">Mobile Dev</option>
+                                <option value="fas fa-globe">Web Dev</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-plus"></i> Create Subject
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Add Unit Form -->
+                <div id="add-unit-form" class="content-form">
+                    {% if subjects %}
+                    <form id="unitForm" onsubmit="addUnit(event)" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="unit-subject" class="form-label">Select Subject</label>
+                            <select id="unit-subject" name="subject_id" class="form-select" required>
+                                <option value="">Choose a subject</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="unit-number" class="form-label">Unit Number</label>
+                                <input type="number" id="unit-number" name="unit_number" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="unit-pages" class="form-label">Pages Count</label>
+                                <input type="number" id="unit-pages" name="pages_count" class="form-input" min="1"
+                                    placeholder="20">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="unit-title" class="form-label">Unit Title</label>
+                            <input type="text" id="unit-title" name="unit_title" class="form-input"
+                                placeholder="e.g., Introduction to Networking">
+                        </div>
+                        <div class="form-group">
+                            <label for="unit-description" class="form-label">Description</label>
+                            <textarea id="unit-description" name="unit_description" class="form-textarea"
+                                placeholder="Brief description of the unit content"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="unit-topics" class="form-label">Topics (comma-separated)</label>
+                            <input type="text" id="unit-topics" name="topics" class="form-input"
+                                placeholder="e.g., OSI Model, TCP/IP, Routing">
+                        </div>
+                        <div class="form-group">
+                            <label for="unit-file" class="form-label">Upload File</label>
+                            <input type="file" id="unit-file" name="file" class="form-file"
+                                accept=".pdf,.pptx,.docx,.doc,.txt,.jpg,.jpeg,.png,.gif,.mp4,.mov,.avi,.mkv,.zip,.rar">
+                            <small class="file-info">Supported: PDF, PPTX, DOCX, DOC, TXT, Images (JPG, PNG, GIF),
+                                Videos (MP4, MOV, AVI, MKV), Archives (ZIP, RAR)</small>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-plus"></i> Add Unit
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h3>No subjects available</h3>
+                        <p>Create subjects to add units</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Manage Subjects Section -->
+            <div id="subjects-section" class="admin-section">
+                <h2 class="section-title">Manage Subjects and Units</h2>
+
+                {% if subjects %}
+                <div class="subjects-grid">
+                    {% for subject in subjects %}
+                    <div class="subject-card" data-subject-id="{{ subject.id }}">
+                        <div class="subject-header">
+                            <div class="subject-icon">
+                                <i class="{{ subject.icon }}"></i>
+                            </div>
+                            <h3>{{ subject.name }}</h3>
+                        </div>
+                        <div class="subject-stats">
+                            <span>{{ subject.units|length }} units</span>
+                            <span>Created: {{ subject.created_at[:10] if subject.created_at else 'Unknown' }}</span>
+                        </div>
+                        <div class="subject-actions">
+                            <button class="edit-btn"
+                                onclick="openEditSubjectModal('{{ subject.id }}', '{{ subject.name }}', '{{ subject.icon }}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="delete-btn"
+                                onclick="deleteSubject('{{ subject.id }}', '{{ subject.name }}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+
+                        <!-- Units List -->
+                        {% if subject.units %}
+                        <div class="units-list">
+                            <h4>Units:</h4>
+                            {% for unit in subject.units|sort(attribute='number') %}
+                            <div class="unit-item">
+                                <span class="unit-number">{{ unit.number }}</span>
+                                <span class="unit-title">{{ unit.title }}</span>
+                                <div class="unit-actions">
+                                    {% if unit.filename %}
+                                    <i class="fas fa-file-check" title="File available"></i>
+                                    {% else %}
+                                    <i class="fas fa-file-times" title="No file"></i>
+                                    {% endif %}
+                                    <button class="unit-edit-btn" data-subject-id="{{ subject.id }}"
+                                        data-unit-id="{{ unit.id }}" data-unit-number="{{ unit.number }}"
+                                        data-unit-title="{{ unit.title }}"
+                                        data-unit-description="{{ unit.description }}"
+                                        data-unit-topics="{{ unit.topics }}" data-unit-pages="{{ unit.pages_count }}"
+                                        data-unit-filename="{{ unit.filename }}" onclick="openEditUnitModalFixed(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="unit-delete-btn"
+                                        onclick="deleteUnit('{{ subject.id }}', '{{ unit.id }}', '{{ unit.title }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>No subjects created yet</h3>
+                    <p>Create a subject in the "Create" section</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Overview Section -->
+            <div id="overview-section" class="admin-section">
+                <h2 class="section-title">Dashboard Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.total_subjects }}</h3>
+                            <p>Total Subjects</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.total_files }}</h3>
+                            <p>Total Files</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.total_visits }}</h3>
+                            <p>Total Visits</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.total_downloads }}</h3>
+                            <p>Total Downloads</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Last updated: {{ stats.last_updated[:19] if stats.last_updated else 'Never' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Subject Modal -->
+    <div id="editSubjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Subject</h2>
+                <span class="modal-close" onclick="closeEditSubjectModal()">&times;</span>
+            </div>
+            <form id="editSubjectForm" onsubmit="updateSubject(event)">
+                <input type="hidden" id="edit-subject-id" name="subject_id">
+                <div class="form-group">
+                    <label for="edit-subject-name" class="form-label">Subject Name</label>
+                    <input type="text" id="edit-subject-name" name="subject_name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-subject-icon" class="form-label">Icon Class</label>
+                    <select id="edit-subject-icon" name="subject_icon" class="form-select">
+                        <option value="fas fa-book">General</option>
+                        <option value="fas fa-code">Programming</option>
+                        <option value="fas fa-database">Database</option>
+                        <option value="fas fa-chart-line">Mathematics</option>
+                        <option value="fas fa-network-wired">Networks</option>
+                        <option value="fas fa-brain">AI/ML</option>
+                        <option value="fas fa-mobile-alt">Mobile Dev</option>
+                        <option value="fas fa-globe">Web Dev</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-save"></i> Update Subject
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Unit Modal -->
+    <div id="editUnitModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Edit Unit</h2>
+                <span class="modal-close" onclick="closeEditUnitModal()">&times;</span>
+            </div>
+            <form id="editUnitForm" onsubmit="updateUnit(event)" enctype="multipart/form-data">
+                <input type="hidden" id="edit-unit-subject-id" name="subject_id">
+                <input type="hidden" id="edit-unit-id" name="unit_id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit-unit-number" class="form-label">Unit Number</label>
+                        <input type="number" id="edit-unit-number" name="unit_number" class="form-input" min="1"
+                            max="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-unit-pages" class="form-label">Pages Count</label>
+                        <input type="number" id="edit-unit-pages" name="pages_count" class="form-input" min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-unit-title" class="form-label">Unit Title</label>
+                    <input type="text" id="edit-unit-title" name="unit_title" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-unit-description" class="form-label">Description</label>
+                    <textarea id="edit-unit-description" name="unit_description" class="form-textarea"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-unit-topics" class="form-label">Topics (comma-separated)</label>
+                    <input type="text" id="edit-unit-topics" name="topics" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="edit-unit-file" class="form-label">Upload New File (optional)</label>
+                    <input type="file" id="edit-unit-file" name="file" class="form-file"
+                        accept=".pdf,.pptx,.docx,.doc,.txt,.jpg,.jpeg,.png,.gif,.mp4,.mov,.avi,.mkv,.zip,.rar">
+                    <small class="file-info">Leave empty to keep existing file. Supported: PDF, PPTX, DOCX, DOC, TXT,
+                        Images, Videos, Archives</small>
+                    <div id="current-file-info"
+                        style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;"></div>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-save"></i> Update Unit
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Navigation between sections
+        function showSection(sectionName) {
+            document.querySelectorAll('.admin-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(`${sectionName}-section`).classList.add('active');
+            document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
+        }
+
+        // Content type switching in add section
+        function showContentType(type) {
+            document.querySelectorAll('.content-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.content-form').forEach(form => {
+                form.classList.remove('active');
+            });
+
+            document.querySelector(`[data-type="${type}"]`).classList.add('active');
+            document.getElementById(`add-${type}-form`).classList.add('active');
+        }
+
+        // Add subject functionality
+        async function addSubject(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const data = {
+                subject_name: formData.get('subject_name'),
+                subject_icon: formData.get('subject_icon')
+            };
+
+            const button = event.target.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/admin/add_subject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Subject created successfully!', 'success');
+                    event.target.reset();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message || 'Failed to create subject', 'error');
+                }
+            } catch (error) {
+                showToast('Error creating subject. Please try again.', 'error');
+            }
+
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+
+        // Add unit functionality
+        async function addUnit(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+
+            const button = event.target.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/admin/add_unit', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Unit added successfully!', 'success');
+                    event.target.reset();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message || 'Failed to add unit', 'error');
+                }
+            } catch (error) {
+                showToast('Error adding unit. Please try again.', 'error');
+            }
+
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+
+        // Open edit subject modal
+        function openEditSubjectModal(subjectId, subjectName, subjectIcon) {
+            document.getElementById('edit-subject-id').value = subjectId;
+            document.getElementById('edit-subject-name').value = subjectName;
+            document.getElementById('edit-subject-icon').value = subjectIcon;
+            document.getElementById('editSubjectModal').style.display = 'flex';
+        }
+
+        // Close edit subject modal
+        function closeEditSubjectModal() {
+            document.getElementById('editSubjectModal').style.display = 'none';
+        }
+
+        // Update subject
+        async function updateSubject(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const data = {
+                subject_id: formData.get('subject_id'),
+                subject_name: formData.get('subject_name'),
+                subject_icon: formData.get('subject_icon')
+            };
+
+            const button = event.target.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/admin/edit_subject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Subject updated successfully!', 'success');
+                    closeEditSubjectModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message || 'Failed to update subject', 'error');
+                }
+            } catch (error) {
+                showToast('Error updating subject. Please try again.', 'error');
+            }
+
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+
+        // Delete subject functionality
+        async function deleteSubject(subjectId, subjectName) {
+            if (!confirm(`Are you sure you want to delete "${subjectName}"? This will also delete all associated units and files.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/delete_subject/${subjectId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Subject deleted successfully!', 'success');
+                    const subjectCard = document.querySelector(`[data-subject-id="${subjectId}"]`);
+                    if (subjectCard) {
+                        subjectCard.remove();
+                    }
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message || 'Failed to delete subject', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting subject. Please try again.', 'error');
+            }
+        }
+
+        // Open edit unit modal
+        // Open edit unit modal - FIXED VERSION
+        function openEditUnitModalFixed(button) {
+            const subjectId = button.getAttribute('data-subject-id');
+            const unitId = button.getAttribute('data-unit-id');
+            const unitNumber = button.getAttribute('data-unit-number');
+            const unitTitle = button.getAttribute('data-unit-title');
+            const unitDescription = button.getAttribute('data-unit-description');
+            const unitTopics = button.getAttribute('data-unit-topics');
+            const unitPages = button.getAttribute('data-unit-pages');
+            const unitFilename = button.getAttribute('data-unit-filename');
+
+            document.getElementById('edit-unit-subject-id').value = subjectId;
+            document.getElementById('edit-unit-id').value = unitId;
+            document.getElementById('edit-unit-number').value = unitNumber;
+            document.getElementById('edit-unit-title').value = unitTitle;
+            document.getElementById('edit-unit-description').value = unitDescription || '';
+            document.getElementById('edit-unit-topics').value = unitTopics || '';
+            document.getElementById('edit-unit-pages').value = unitPages || '';
+
+            const currentFileInfo = document.getElementById('current-file-info');
+            if (unitFilename && unitFilename !== 'None') {
+                currentFileInfo.innerHTML = `<i class="fas fa-file"></i> Current file: <strong>${unitFilename}</strong>`;
+            } else {
+                currentFileInfo.innerHTML = '<i class="fas fa-info-circle"></i> No file uploaded yet';
+            }
+
+            document.getElementById('editUnitModal').style.display = 'flex';
+        }
+        // Close edit unit modal
+        function closeEditUnitModal() {
+            document.getElementById('editUnitModal').style.display = 'none';
+            document.getElementById('editUnitForm').reset();
+        }
+
+        // Update unit
+        async function updateUnit(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+
+            const button = event.target.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/admin/edit_unit', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Unit updated successfully!', 'success');
+                    closeEditUnitModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message || 'Failed to update unit', 'error');
+                }
+            } catch (error) {
+                showToast('Error updating unit. Please try again.', 'error');
+            }
+
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+
+        // Delete unit
+        async function deleteUnit(subjectId, unitId, unitTitle) {
+            if (!confirm(`Are you sure you want to delete "${unitTitle}"? This will also delete the associated file.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/delete_unit', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        subject_id: subjectId,
+                        unit_id: unitId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Unit deleted successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message || 'Failed to delete unit', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting unit. Please try again.', 'error');
+            }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+                z-index: 5000;
+                opacity: 0;
+                transform: translateY(-20px);
+                transition: all 0.3s ease;
+                font-family: inherit;
+                font-size: 0.9rem;
+                font-weight: 500;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 100);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Close modals on outside click
+        window.onclick = function (event) {
+            const editSubjectModal = document.getElementById('editSubjectModal');
+            const editUnitModal = document.getElementById('editUnitModal');
+
+            if (event.target === editSubjectModal) {
+                closeEditSubjectModal();
+            }
+            if (event.target === editUnitModal) {
+                closeEditUnitModal();
+            }
+        }
+
+        // File input styling
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(fileInput => {
+                fileInput.addEventListener('change', function () {
+                    if (this.files && this.files[0]) {
+                        const fileName = this.files[0].name;
+                        const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2);
+                        showToast(`File selected: ${fileName} (${fileSize} MB)`, 'info');
+                    }
+                });
+            });
+        });
+
+        // NUCLEAR OPTION: Complete History Wipe + Maximum Back Prevention
+        (function () {
+            console.log('💣 NUCLEAR: Admin page back prevention activated');
+
+            // STEP 1: Completely wipe and replace browser history
+            if (window.history) {
+                // Clear ALL previous history entries
+                window.history.replaceState(null, null, window.location.href);
+
+                // Create MASSIVE buffer - 50 states to prevent any back navigation
+                for (let i = 0; i < 50; i++) {
+                    window.history.pushState(null, null, window.location.href);
+                }
+            }
+
+            // STEP 2: Intercept popstate with MAXIMUM aggression
+            const blockNavigation = function (e) {
+                console.log('🚫 ADMIN: Back blocked - restoring position');
+
+                // Prevent ALL default behaviors
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+
+                // Immediately push forward MULTIPLE times
+                for (let i = 0; i < 10; i++) {
+                    window.history.pushState(null, null, window.location.href);
+                }
+
+                // Show toast message to user
+                showToast('Please use the Logout button to exit admin panel', 'info');
+
+                return false;
+            };
+
+            // Add listeners on BOTH phases (capture and bubble)
+            window.addEventListener('popstate', blockNavigation, true);  // Capture phase
+            window.addEventListener('popstate', blockNavigation, false); // Bubble phase
+
+            // STEP 3: Override ALL navigation methods
+            if (window.history) {
+                // Block history.back()
+                const originalBack = window.history.back;
+                window.history.back = function () {
+                    console.log('🚫 history.back() BLOCKED');
+                    for (let i = 0; i < 10; i++) {
+                        window.history.pushState(null, null, window.location.href);
+                    }
+                    return false;
+                };
+
+                // Block history.go() for negative values
+                const originalGo = window.history.go;
+                window.history.go = function (n) {
+                    if (n && n < 0) {
+                        console.log('🚫 history.go(' + n + ') BLOCKED');
+                        for (let i = 0; i < 10; i++) {
+                            window.history.pushState(null, null, window.location.href);
+                        }
+                        return false;
+                    }
+                    return originalGo.apply(this, arguments);
+                };
+            }
+
+            // STEP 4: Keyboard shortcut blocking
+            document.addEventListener('keydown', function (e) {
+                // Block Alt+Left (back), Backspace (if not in input)
+                if (e.altKey && e.keyCode === 37) {
+                    console.log('🚫 Alt+Left (back) BLOCKED');
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Block Backspace outside of inputs
+                if (e.keyCode === 8 &&
+                    !['INPUT', 'TEXTAREA'].includes(e.target.tagName) &&
+                    e.target.type !== 'text' &&
+                    e.target.type !== 'password') {
+                    console.log('🚫 Backspace navigation BLOCKED');
+                    e.preventDefault();
+                    return false;
+                }
+            }, true);
+
+            // STEP 5: Mouse button blocking (back button on mouse)
+            document.addEventListener('mouseup', function (e) {
+                // Block mouse back button (button 3)
+                if (e.button === 3 || e.button === 8) {
+                    console.log('🚫 Mouse back button BLOCKED');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+
+            // STEP 6: Additional hash change protection
+            window.addEventListener('hashchange', function (e) {
+                console.log('🚫 Hash change BLOCKED');
+                e.preventDefault();
+                window.location.hash = '';
+                return false;
+            }, true);
+
+            // STEP 7: Beforeunload warning (extra layer)
+            window.addEventListener('beforeunload', function (e) {
+                console.log('⚠️ Navigation attempt detected');
+            });
+
+            // STEP 8: Page visibility change (detects tab switching)
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    // Refresh buffer when returning to tab
+                    for (let i = 0; i < 10; i++) {
+                        window.history.pushState(null, null, window.location.href);
+                    }
+                }
+            });
+
+            console.log('✅ NUCLEAR protection active - 50 state buffer created');
+        })();
+    </script>
+</body>
+
+</html>
